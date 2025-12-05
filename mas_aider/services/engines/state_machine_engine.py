@@ -5,6 +5,7 @@
 import time
 from typing import Dict, Any, List, Optional
 from ..evaluators.condition_evaluator import ConditionEvaluator
+from ...workflows.workspace_interaction_guide import COLLABORATION_GUIDE
 
 # 导入异常类和日志
 try:
@@ -210,15 +211,41 @@ class StateMachineEngine:
             raise AgentError(error_msg, agent_name=agent_name, prompt=prompt[:100]) from e
 
     def _render_prompt(self, template: str, context, global_state: Dict[str, Any]) -> str:
-        """渲染prompt模板"""
-        # 简单的模板替换
+        """渲染prompt模板，支持Agent响应传递"""
         prompt = template
 
-        # 替换上下文变量
+        # 基础变量替换
         prompt = prompt.replace("{{initial_message}}", context.initial_message or "")
         prompt = prompt.replace("{{turn_count}}", str(global_state.get("turn_count", 0)))
 
-        # 可以扩展更多的模板变量
+        # 协作规范替换
+        prompt = prompt.replace("{{COLLABORATION_GUIDE}}", COLLABORATION_GUIDE.strip())
+
+        # 前一个Agent的响应传递
+        agent_responses = global_state.get("agent_responses", [])
+        if agent_responses:
+            last_response = agent_responses[-1]
+            last_agent_name = last_response.get("agent", "")
+            last_content = last_response.get("response", {}).get("content", "")
+            last_decisions = last_response.get("response", {}).get("decisions", {})
+
+            prompt = prompt.replace("{{last_agent_name}}", last_agent_name)
+            prompt = prompt.replace("{{last_agent_content}}", last_content)
+            prompt = prompt.replace("{{last_agent_decisions}}", str(last_decisions))
+        else:
+            prompt = prompt.replace("{{last_agent_name}}", "")
+            prompt = prompt.replace("{{last_agent_content}}", "")
+            prompt = prompt.replace("{{last_agent_decisions}}", "{}")
+
+        # 所有历史Agent响应（可选）
+        if "{{all_agent_responses}}" in prompt:
+            all_responses_text = []
+            for resp in agent_responses:
+                agent_name = resp.get("agent", "Unknown")
+                state_name = resp.get("state", "Unknown")
+                content = resp.get("response", {}).get("content", "")
+                all_responses_text.append(f"[{agent_name} in {state_name}]\n{content}")
+            prompt = prompt.replace("{{all_agent_responses}}", "\n\n".join(all_responses_text))
 
         return prompt
 

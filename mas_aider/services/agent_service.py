@@ -30,21 +30,6 @@ class AgentService:
         model_name = config.aider.model
         api_base = config.aider.api_base
 
-        # 输出配置信息用于调试
-        # from ..diagnostics.logging import get_logger
-        # logger = get_logger()
-        # logger.info("🔧 AgentService 配置信息:")
-        # logger.info(f"   model_name: {model_name}")
-        # logger.info(f"   api_base: {api_base}")
-        # logger.info(f"   verbose_logging: {config.aider.verbose_logging}")
-        # logger.info(f"   max_turns: {config.workflow.max_turns}")
-        # logger.info(f"   project_root: {config.paths.project_root}")
-        # logger.info(f"   framework_root: {config.paths.framework_root}")
-        # logger.info(f"   workspace_root: {config.paths.workspace_root}")
-        # logger.info(f"   collab_folder_name: {config.environment.collab.folder_name}")
-        # logger.info(f"   initialize_git: {config.environment.initialize}")
-        # logger.info(f"   aider_api_key: {config.aider.api_key}")
-
         self._agent_factory = AiderAgentFactory(
             model_name=model_name,
             api_base=api_base
@@ -180,50 +165,32 @@ class AgentService:
 
     def get_agent_for_workflow(self, agent_name: str, context) -> Any:
         """
-        为工作流获取Agent实例
+        为工作流获取Agent实例（支持Keep-Alive缓存）
 
         Args:
             agent_name: Agent名称
             context: 工作流上下文
 
         Returns:
-            Agent实例
+            Agent实例（可能是缓存的）
         """
         # 从上下文中获取workspace信息
         workspace_info = context.metadata.get("workspace_info")
         if not workspace_info:
             raise ValueError("Workspace info not found in context")
 
-        # 根据agent_name创建相应的Agent
-        # 这里需要根据配置文件中的agent定义来创建
-        # 暂时使用简单映射，后续可以从配置中读取
-
-        # 删除错误的映射表
-        # agent_mappings = {
-        #     "architect": "agent_a",
-        #     "developer": "agent_b",
-        #     "reviewer": "agent_a",
-        #     "fixer": "agent_b",
-        #     "tester": "agent_a"
-        # }
-
-        # 直接使用 agent_name 作为 key
+        # 获取Agent工作目录
         agent_dir = workspace_info.agent_dirs.get(agent_name)
-
         if not agent_dir:
             raise ValueError(f"Agent directory not found for {agent_name}")
 
-        # 让Agent可以访问整个collab目录下的所有文件
-        collab_pattern = str(workspace_info.collab_dir / "**/*")
-
-        # 创建Agent实例
-        agent = self._agent_factory.create_coder(
+        # ✅ 使用缓存的 get_agent 方法，而不是每次创建新实例
+        return self.get_agent(
+            agent_name=agent_name,
             root_path=agent_dir,
-            fnames=[collab_pattern],  # 可以使用collab目录下的所有文件
-            agent_name=agent_name  # 使用传入的agent_name作为显示名称
+            workspace_info=workspace_info,
+            workflow_name=context.workflow_name
         )
-
-        return agent
 
     def parse_agent_response(self, response: str) -> Dict[str, Any]:
         """

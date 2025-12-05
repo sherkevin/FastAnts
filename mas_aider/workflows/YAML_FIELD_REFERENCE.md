@@ -173,8 +173,14 @@
   - 执行历史记录完整的 prompt 内容，便于调试
 - **作用时机**: 每个状态执行前进行渲染，实时发送给 Agent
 - **支持的模板变量**:
-  - `{{initial_message}}`: 从 `WorkflowContext.initial_message` 获取
-  - `{{turn_count}}`: 从全局状态 `global_state["turn_count"]` 获取
+  - `{{initial_message}}`: 工作流初始任务目标
+  - `{{turn_count}}`: 当前执行轮次
+  - `{{COLLABORATION_GUIDE}}`: 协作规范常量，从 workspace_interaction_guide.py 加载的字符串常量
+  - `{{last_agent_name}}`: 前一个参与者的名称，从 global_state["agent_responses"][-1]["agent"] 获取，若无则为空字符串
+  - `{{last_agent_content}}`: 前一个参与者的任务执行总结，从 global_state["agent_responses"][-1]["response"]["content"] 获取，若无则为空字符串
+  - `{{last_agent_decisions}}`: 前一个参与者的决策结果，从 global_state["agent_responses"][-1]["response"]["decisions"] 获取并转换为字符串，若无则为 "{}"
+
+这些变量在 prompt 渲染时动态替换，确保参与者了解上下文和协作规则。{{COLLABORATION_GUIDE}} 提供统一的协作规范，{{last_*}} 变量提供上一轮执行的反馈和决策信息。
 - **故障场景**: 模板变量不存在会导致渲染失败，Agent 收到不完整的指令
 - **设计考量**: 模板化支持动态上下文，提高指令的适应性
 - **最佳实践**: 清晰描述任务目标、执行步骤、输出格式和决策标准
