@@ -1,6 +1,6 @@
 # agents.py
 from pathlib import Path
-from aider.coders import Coder
+from aider.coders import Coder, ArchitectCoder, AskCoder
 from aider.models import Model
 from aider.io import InputOutput
 
@@ -12,10 +12,31 @@ class AiderAgentFactory:
             os.environ["OPENAI_BASE_URL"] = api_base
         self.model = Model(model_name)
 
-    def create_coder(self, root_path: Path, fnames: list[str], agent_name: str) -> Coder:
+    # Agent类型映射表，用于选择不同的Coder实现
+    CODER_TYPES = {
+        "coder": Coder,
+        "architect": ArchitectCoder,
+        "ask": AskCoder,
+    }
+
+    def create_coder(
+        self, 
+        root_path: Path, 
+        fnames: list[str], 
+        agent_name: str,
+        type: str = "coder",
+        **kwargs
+    ) -> Coder:
         """
         创建 Coder，并配置日志记录
         所有agents共享同一个文件，通过绝对路径访问
+        
+        Args:
+            root_path: Agent工作目录
+            fnames: 可访问的文件列表
+            agent_name: Agent名称
+            type: Agent类型，可选值: "coder", "architect", "ask"
+            **kwargs: 其他参数
         """
         # 1. 显式定义聊天记录文件路径
         # 这样你就能在 agent_a/.aider.chat.history.md 中看到记录了
@@ -28,13 +49,15 @@ class AiderAgentFactory:
             input_history_file=root_path / ".aider.input.history",
         )
 
-        # 3. 创建 Coder - 使用绝对路径，确保所有操作都在workspace下
-        coder = Coder.create(
+        # 3. 根据type获取对应的 Coder 类
+        CoderClass = self.CODER_TYPES.get(type, Coder)
+
+        # 4. 创建 Coder - 使用绝对路径，确保所有操作都在workspace下
+        coder = CoderClass.create(
             main_model=self.model,
             io=io,
             fnames=fnames,  # 现在是绝对路径
             verbose=False,  # 关键：开启详细模式，出错时能看到原因
-            # 如果 GLM-4 编辑能力较弱，可以尝试强制使用 'whole' 模式，虽然耗费 token 但更稳
-            # edit_format="whole",
+            **kwargs        # 透传其他参数，如 edit_format="whole"
         )
         return coder

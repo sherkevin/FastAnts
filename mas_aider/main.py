@@ -27,7 +27,7 @@ class MasAiderSession:
 
         Args:
             auto_cleanup: 是否在会话结束时自动清理Agent缓存
-    """
+        """
         # 1. 加载配置
         self.config = AppConfig.load()
         self.logger = get_logger()
@@ -64,15 +64,15 @@ class MasAiderSession:
             # 3. 创建工作流上下文
             initial_message = WorkflowFactory.get_workflow_initial_message(workflow_name)
 
-    context = WorkflowContext(
+            context = WorkflowContext(
                 workflow_name=workflow_name,
                 config=self.config,
                 initial_message=initial_message,
-        metadata={
+                metadata={
                     "env_service": self.env_service,
                     "agent_service": self.agent_service
-        }
-    )
+                }
+            )
 
             # 4. 创建工作流
             workflow = WorkflowFactory.create(workflow_name, context)
@@ -86,7 +86,7 @@ class MasAiderSession:
 
             # 5. 执行工作流
             self.logger.log_execution_start(workflow_name)
-    result = workflow.execute()
+            result = workflow.execute()
 
             # 6. 输出结果
             self._print_results(result)
@@ -103,7 +103,7 @@ class MasAiderSession:
         pass
 
     def _print_results(self, result) -> None:
-    """输出执行结果"""
+        """输出执行结果"""
         self.logger.info("="*60)
         self.logger.info("📊 WORKFLOW EXECUTION RESULTS")
         self.logger.info("="*60)
@@ -115,7 +115,7 @@ class MasAiderSession:
             if hasattr(result, 'agents_used'):
                 self.logger.info(f"🤖 Agents Used: {', '.join(result.agents_used)}")
 
-        if hasattr(result, 'final_content') and result.final_content.strip():
+            if hasattr(result, 'final_content') and result.final_content.strip():
                 self.logger.info("📄 Final content generated successfully")
             else:
                 self.logger.warning("⚠️ No content generated in shared file")
@@ -124,8 +124,8 @@ class MasAiderSession:
             if hasattr(result, 'error_message') and result.error_message:
                 self.logger.error(f"💥 Error: {result.error_message}")
 
-    # 显示额外元数据
-    if hasattr(result, 'metadata') and result.metadata:
+        # 显示额外元数据
+        if hasattr(result, 'metadata') and result.metadata:
             self.logger.info("📋 Additional metadata available")
 
         self.logger.info("="*60)
@@ -211,7 +211,7 @@ if __name__ == "__main__":
 
     if len(sys.argv) > 1:
         if sys.argv[1] == "--list":
-        list_available_workflows()
+            list_available_workflows()
         elif sys.argv[1] == "--run" and len(sys.argv) > 2:
             workflow_name = sys.argv[2]
             main(workflow_name)

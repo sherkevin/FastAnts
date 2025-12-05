@@ -131,7 +131,7 @@ class BaseWorkflow(ABC):
                 success=True,
                 final_content=result.get("final_content", ""),
                 total_turns=result.get("total_turns", 0),
-                agents_used=[config["role"] for config in agent_configs],
+                agents_used=[config["name"] for config in agent_configs],  # 使用name而不是role
                 metadata=result.get("metadata", {})
             )
 

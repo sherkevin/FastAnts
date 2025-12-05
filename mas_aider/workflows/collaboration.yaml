@@ -9,9 +9,9 @@ max_turns: 6
 # Agent定义
 agents:
   - name: "architect"
-    role: "架构师"
+    type: "architect"
   - name: "developer"
-    role: "开发者"
+    type: "coder"
 
 # 状态机定义
 states:

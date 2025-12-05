@@ -39,7 +39,7 @@ class AgentService:
         # cache_key格式: "workflow_name:agent_name:workspace_path"
         self._active_agents: Dict[str, Any] = {}
 
-    def get_agent(self, agent_name: str, root_path: Path, workspace_info: Any, workflow_name: str = None) -> Any:
+    def get_agent(self, agent_name: str, root_path: Path, workspace_info: Any, workflow_name: str = None, agent_type: str = "coder") -> Any:
         """
         获取或创建 Agent 实例（核心 Keep-Alive 逻辑）
 
@@ -48,6 +48,7 @@ class AgentService:
             root_path: Agent工作目录
             workspace_info: 工作区信息
             workflow_name: 工作流名称（可选，用于区分不同工作流的同名Agent）
+            agent_type: Agent类型，可选值: "coder", "architect", "ask"，默认"coder"
 
         Returns:
             Agent实例
@@ -65,7 +66,7 @@ class AgentService:
             return existing_agent
 
         # 2. 如果没有，则创建新实例
-        logger.debug(f"🆕 Creating new agent instance: {cache_key}")
+        logger.debug(f"🆕 Creating new agent instance: {cache_key} (type: {agent_type})")
 
         # 让Agent可以访问整个collab目录下的所有文件
         collab_pattern = str(workspace_info.collab_dir / "**/*")
@@ -73,7 +74,8 @@ class AgentService:
         agent = self._agent_factory.create_coder(
             root_path=root_path,
             fnames=[collab_pattern],
-            agent_name=agent_name
+            agent_name=agent_name,
+            type=agent_type
         )
 
         # 3. 存入缓存
@@ -92,7 +94,7 @@ class AgentService:
         Args:
             context: 工作流上下文
             workspace_info: 工作区信息
-            agent_configs: Agent配置列表 [{"name": "architect", "role": "架构师"}, ...]
+            agent_configs: Agent配置列表 [{"name": "architect", "type": "coder"}, ...]
 
         Returns:
             Dict[str, Agent]: Agent名称到实例的映射
@@ -101,17 +103,18 @@ class AgentService:
 
         for agent_config in agent_configs:
             agent_name = agent_config["name"]
-            agent_role = agent_config.get("role", agent_name)
+            agent_type = agent_config.get("type", "coder")  # 默认使用coder类型
 
             # 获取Agent的工作目录
             agent_root = workspace_info.agent_dirs[agent_name]
 
-            # ✅ 使用 get_agent 获取或复用实例
+            # ✅ 使用 get_agent 获取或复用实例，传递type参数
             agent = self.get_agent(
                 agent_name=agent_name,
                 root_path=agent_root,
                 workspace_info=workspace_info,
-                workflow_name=context.workflow_name
+                workflow_name=context.workflow_name,
+                agent_type=agent_type
             )
 
             agents[agent_name] = agent
@@ -185,11 +188,13 @@ class AgentService:
             raise ValueError(f"Agent directory not found for {agent_name}")
 
         # ✅ 使用缓存的 get_agent 方法，而不是每次创建新实例
+        # 注意：这里默认使用"coder"类型，如果需要其他类型，应通过create_agents_for_workflow创建
         return self.get_agent(
             agent_name=agent_name,
             root_path=agent_dir,
             workspace_info=workspace_info,
-            workflow_name=context.workflow_name
+            workflow_name=context.workflow_name,
+            agent_type="coder"  # 默认类型，实际类型应在create_agents_for_workflow中指定
         )
 
     def parse_agent_response(self, response: str) -> Dict[str, Any]:

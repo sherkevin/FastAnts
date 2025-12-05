@@ -9,9 +9,9 @@ max_turns: 6
 # Agent定义
 agents:
   - name: "client"
-    role: "甲方"
+    type: "coder"
   - name: "supplier"
-    role: "乙方"
+    type: "coder"
 
 # 状态机定义
 states:

@@ -38,7 +38,7 @@ class ConfigWorkflow(BaseWorkflow):
     def get_agent_configs(self) -> List[Dict[str, Any]]:
         """获取Agent配置"""
         agents = self.config.get("agents", [])
-        return [{"name": agent["name"], "role": agent["role"]} for agent in agents]
+        return [{"name": agent["name"], "type": agent.get("type", "coder")} for agent in agents]
 
     def execute(self) -> WorkflowResult:
         """
@@ -163,8 +163,14 @@ class ConfigWorkflow(BaseWorkflow):
             raise ValueError("At least one agent must be defined")
 
         for agent in agents:
-            if "name" not in agent or "role" not in agent:
-                raise ValueError("Each agent must have 'name' and 'role' fields")
+            if "name" not in agent:
+                raise ValueError("Each agent must have 'name' field")
+            
+            # 验证type字段（如果提供）
+            agent_type = agent.get("type", "coder")
+            valid_types = ["coder", "architect", "ask"]
+            if agent_type not in valid_types:
+                raise ValueError(f"Invalid agent type '{agent_type}'. Valid types: {valid_types}")
 
         # 验证states
         states = config.get("states", [])
