@@ -68,12 +68,21 @@ class AgentService:
         # 2. 如果没有，则创建新实例
         logger.debug(f"🆕 Creating new agent instance: {cache_key} (type: {agent_type})")
 
-        # 让Agent可以访问整个collab目录下的所有文件
-        collab_pattern = str(workspace_info.collab_dir / "**/*")
+        # ✅ 让Agent可以访问collab目录，并可以在其中自由创建文件
+        # 在Python端获取目录中的所有文件，确保Aider能正确索引
+        # Aider 的 RepoMap 会包含所有文件，每次执行时会重新扫描，确保看到最新状态
+        collab_dir = workspace_info.collab_dir
+
+        # 获取目录中的所有现有文件
+        fnames_list = [str(collab_dir)]  # 包含目录本身，允许创建新文件
+        if collab_dir.exists():
+            for file_path in collab_dir.iterdir():
+                if file_path.is_file():
+                    fnames_list.append(str(file_path))
 
         agent = self._agent_factory.create_coder(
             root_path=root_path,
-            fnames=[collab_pattern],
+            fnames=fnames_list,  # ✅ 传递具体的文件路径列表
             agent_name=agent_name,
             type=agent_type
         )

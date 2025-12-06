@@ -7,7 +7,10 @@ import yaml
 
 
 from ..core.workflow_base import BaseWorkflow, WorkflowContext, WorkflowResult
-from ..services.engines.state_machine_engine import StateMachineEngine
+from ..engines.langgraph_engine import LangGraphEngine
+from ..services.evaluators.condition_evaluator import UnifiedConditionEvaluator
+from ..diagnostics.logging import get_logger
+import importlib
 
 
 class ConfigWorkflow(BaseWorkflow):
@@ -29,6 +32,7 @@ class ConfigWorkflow(BaseWorkflow):
         self.config_path = config_path
         self.config = self._load_config()
         self.engine = None
+        self.logger = get_logger()
 
     @property
     def workflow_name(self) -> str:
@@ -44,7 +48,7 @@ class ConfigWorkflow(BaseWorkflow):
         """
         执行配置驱动的工作流
 
-        重写父类的execute方法，使用状态机引擎执行
+        使用LangGraph引擎执行，支持workflow router热拔插
         """
         try:
             # 1. 获取Agent配置并创建agents
@@ -62,10 +66,24 @@ class ConfigWorkflow(BaseWorkflow):
             # 3. 创建Agent服务
             agent_service = self.context.metadata.get("agent_service")
 
-            # 4. 初始化状态机引擎
-            self.engine = StateMachineEngine(self.config, agent_service, env_service)
+            # 4. 加载workflow router（Convention over Configuration）
+            workflow_router = self._load_workflow_router()
+            
+            # 5. 创建统一条件评估器（注入router）
+            condition_evaluator = UnifiedConditionEvaluator(
+                max_turns=self.config.get("max_turns", 10),
+                workflow_router=workflow_router
+            )
 
-            # 5. 执行工作流
+            # 6. 初始化LangGraph引擎
+            self.engine = LangGraphEngine(
+                self.config, 
+                agent_service, 
+                env_service,
+                condition_evaluator
+            )
+
+            # 7. 执行工作流
             initial_state = {
                 "workflow_name": self.workflow_name,
                 "workspace_info": workspace_info
@@ -73,7 +91,7 @@ class ConfigWorkflow(BaseWorkflow):
 
             result = self.engine.execute(self.context, initial_state)
 
-            # 6. 构建标准结果格式
+            # 8. 构建标准结果格式
             return WorkflowResult(
                 success=result.get("success", False),
                 final_content=result.get("final_content", ""),
@@ -83,6 +101,7 @@ class ConfigWorkflow(BaseWorkflow):
             )
 
         except Exception as e:
+            self.logger.error(f"❌ Workflow execution failed: {e}", exc_info=True)
             return WorkflowResult(
                 success=False,
                 final_content="",
@@ -135,8 +154,12 @@ class ConfigWorkflow(BaseWorkflow):
         # 从项目根目录查找 (mas_aider目录)
         project_root = Path(__file__).parent.parent
 
-        # 可能的配置文件位置
+        # 可能的配置文件位置（优先workflow package）
         possible_paths = [
+            # 新格式：workflow package内的workflow.yaml
+            project_root / "workflows" / self.context.workflow_name / "workflow.yaml",
+            project_root / "workflows" / self.context.workflow_name / "workflow.yml",
+            # 兼容旧格式
             project_root / "config" / f"{self.context.workflow_name}.yaml",
             project_root / "config" / f"{self.context.workflow_name}.yml",
             project_root / "workflows" / f"{self.context.workflow_name}.yaml",
@@ -148,6 +171,46 @@ class ConfigWorkflow(BaseWorkflow):
                 return path
 
         return None
+    
+    def _load_workflow_router(self) -> Optional[Any]:
+        """
+        自动发现并加载workflow router（Convention over Configuration）
+        
+        约定：
+        - Router位置：workflows/{workflow_name}/router.py
+        - Router类名：{WorkflowName}Router（驼峰式）
+        
+        Returns:
+            Router实例或None（如果workflow没有自定义router）
+        """
+        workflow_name = self.context.workflow_name
+        
+        try:
+            # 尝试导入 workflows.{workflow_name}.router
+            module_path = f"workflows.{workflow_name}.router"
+            module = importlib.import_module(module_path)
+            
+            # 约定：Router类名 = Pascal case of workflow_name + "Router"
+            # 例如：hulatang -> HulatangRouter
+            #      code_review -> CodeReviewRouter
+            class_name = ''.join(word.capitalize() for word in workflow_name.split('_')) + "Router"
+            
+            router_class = getattr(module, class_name)
+            router = router_class()
+            
+            self.logger.info(f"✅ Loaded workflow router: {class_name}")
+            self.logger.info(f"   Available conditions: {router.list_conditions()}")
+            
+            return router
+            
+        except (ImportError, AttributeError) as e:
+            # 没有router是正常的（简单workflow不需要）
+            self.logger.debug(f"No router found for '{workflow_name}': {e}")
+            return None
+        except Exception as e:
+            # 其他错误应该报警
+            self.logger.warning(f"⚠️  Failed to load router for '{workflow_name}': {e}")
+            return None
 
     def _validate_config(self, config: Dict[str, Any]):
         """验证配置文件的正确性"""

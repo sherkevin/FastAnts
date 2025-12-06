@@ -27,7 +27,7 @@ class MasAiderSession:
 
         Args:
             auto_cleanup: 是否在会话结束时自动清理Agent缓存
-        """
+    """
         # 1. 加载配置
         self.config = AppConfig.load()
         self.logger = get_logger()
@@ -115,12 +115,15 @@ class MasAiderSession:
             if hasattr(result, 'agents_used'):
                 self.logger.info(f"🤖 Agents Used: {', '.join(result.agents_used)}")
 
-            if hasattr(result, 'final_content') and result.final_content.strip():
-                self.logger.info("📄 Final content generated successfully")
-            else:
-                self.logger.warning("⚠️ No content generated in shared file")
+        if hasattr(result, 'final_content') and result.final_content.strip():
+            self.logger.info("📄 Final content generated successfully")
         else:
+            self.logger.warning("⚠️ No content generated in shared file")
+
+        if not (hasattr(result, 'success') and result.success):
             self.logger.error("❌ Status: FAILED")
+            if hasattr(result, 'error_message') and result.error_message:
+                self.logger.error(f"💥 Error: {result.error_message}")
             if hasattr(result, 'error_message') and result.error_message:
                 self.logger.error(f"💥 Error: {result.error_message}")
 

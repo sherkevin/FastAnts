@@ -178,7 +178,7 @@
 - **支持的模板变量**:
   - `{{initial_message}}`: 工作流初始任务目标
   - `{{turn_count}}`: 当前执行轮次
-  - `{{COLLABORATION_GUIDE}}`: 协作规范常量，从 workspace_interaction_guide.py 加载的字符串常量
+  - `{{COLLABORATION_GUIDE}}`: 协作规范常量，从 guide.py 加载的字符串常量
   - `{{last_agent_name}}`: 前一个参与者的名称（增量信息/接力棒），从 global_state["agent_responses"][-1]["agent"] 获取，若无则为空字符串
   - `{{last_agent_content}}`: 前一个参与者上一轮的响应内容（增量信息/接力棒），从 global_state["agent_responses"][-1]["response"]["content"] 获取，若无则为空字符串
   - `{{last_agent_decisions}}`: 前一个参与者上一轮的决策结果（增量信息/接力棒），从 global_state["agent_responses"][-1]["response"]["decisions"] 获取并转换为字符串，若无则为 "{}"
