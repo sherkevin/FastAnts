@@ -41,25 +41,12 @@ states:
 
       {% endif %}
 
-      **重要**：
-      1) 先创建/更新文件，再回复。
-      2) 创建/更新文件时请使用完整路径 + 内容的格式，确保Aider能真正写入文件：
-      ```
-      collab/client_requirements.md
-      # 这里是文件内容
-      ...
-      ```
-      （不要只在思考里描述文件，要实际写入。）
-
       {{COLLABORATION_GUIDE}}
 
-      **回复格式（严格的JSON）**：
+      **决策字段 (Decisions)**：
       {
-        "content": "我已经创建了需求文档" 或 "我已经回答了问题并更新了需求文档",
         "decisions": {}
       }
-
-      **注意**：请先输出文件操作内容（如果需要），最后务必输出JSON格式的控制信息。
 
     transitions:
       - to: "supplier_discuss"
@@ -87,16 +74,13 @@ states:
 
       {{COLLABORATION_GUIDE}}
 
-      **回复格式（严格的JSON）**：
+      **决策字段 (Decisions)**：
       {
-        "content": "我提出了设计方案，询问了XXX问题",
         "decisions": {
           "design_confirmed": false,  // 设计方案是否已确认
           "ready_to_build": false     // 是否可以开始制作
         }
       }
-
-      **注意**：请先输出文件操作内容（如果需要），最后务必输出JSON格式的控制信息。
 
     transitions:
       - to: "client_discuss"
@@ -126,15 +110,12 @@ states:
 
       {{COLLABORATION_GUIDE}}
 
-      **回复格式（严格的JSON）**：
+      **决策字段 (Decisions)**：
       {
-        "content": "我回答了问题，确认了方案",
         "decisions": {
             "approve_design": true  // 如果同意方案，请设为true
         }
       }
-
-      **注意**：请先输出文件操作内容（如果需要），最后务必输出JSON格式的控制信息。
 
     transitions:
       - to: "supplier_discuss"
@@ -144,8 +125,6 @@ states:
   - name: "supplier_create"
     agent: "supplier"
     prompt: |
-      **⚠️ 重要：你必须以JSON格式回复**
-
       你是乙方（开发者）。
 
       经过讨论，方案已确认。之前的对话：
@@ -165,34 +144,16 @@ states:
          - 突出胡辣汤的特色（历史、食材、制作、文化等）
       4. **创建使用说明**：在 `collab/` 创建 `README.md`
 
-      **重要**：
-      1) 先创建/更新文件，然后再回复JSON。
-      2) 创建/更新文件时请使用完整路径 + 内容的格式，确保Aider真正写入文件：
-      ```
-      collab/hulatang_ppt.html
-      <!-- 这里是完整的HTML代码 -->
-      ...
-      ```
-      ```
-      collab/README.md
-      # 使用说明
-      ...
-      ```
-      （不要只在思考里描述文件，要实际写入。）
-
       {{COLLABORATION_GUIDE}}
 
-      **回复格式（严格的JSON）**：
+      **决策字段 (Decisions)**：
       {
-        "content": "我已经创建了HTML PPT文件和使用说明",
         "decisions": {
           "html_created": true,
           "ppt_complete": true,
           "quality_score": 8
         }
       }
-
-      **注意**：请先输出文件操作内容，最后务必输出JSON格式的控制信息。
 
     transitions:
       - to: "client_review"
@@ -218,17 +179,14 @@ states:
       
       {{COLLABORATION_GUIDE}}
 
-      回复格式（严格的JSON）：
+      **决策字段 (Decisions)**：
       {
-        "content": "你的评审反馈（自然对话）",
         "decisions": {
           "satisfaction_score": 7,   // 满意度 1-10
           "needs_revision": true,    // 是否需要修改
           "approved": false          // 是否通过
         }
       }
-
-      **注意**：请先输出文件操作内容（如果需要），最后务必输出JSON格式的控制信息。
 
     transitions:
       - to: "supplier_revise"
@@ -253,16 +211,13 @@ states:
       
       {{COLLABORATION_GUIDE}}
 
-      回复格式（严格的JSON）：
+      **决策字段 (Decisions)**：
       {
-        "content": "修改说明：我修改了X，解决了Y问题...",
         "decisions": {
           "revision_complete": true,
           "quality_improved": 9
         }
       }
-
-      **注意**：请先输出文件操作内容，最后务必输出JSON格式的控制信息。
 
     transitions:
       - to: "client_review"
