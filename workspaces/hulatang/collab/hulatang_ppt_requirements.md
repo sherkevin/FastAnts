@@ -1,125 +1,78 @@
-# Hulatang Promotional PPT Requirements Document
+# 胡辣汤宣传PPT需求文档
 
-## Project Overview
-Create a compelling promotional PowerPoint presentation for Hulatang (胡辣汤), a traditional Chinese spicy soup, to introduce it to a broader audience and potential investors.
+## PPT主题
+胡辣汤品牌推广与文化传播
 
-## PPT Theme
-**"The Spicy Soul of Central China - A Journey through Hulatang"**
-- Emphasize the cultural heritage and authentic flavors
-- Position Hulatang as both a traditional delicacy and modern culinary experience
+## 页面数量
+预计12-15页
 
-## Page Structure (Total: 12 pages)
+## 风格要求
+- 整体风格：传统中国风与现代设计相结合
+- 色调：以红色、金色为主，体现中国传统美食的温暖感
+- 字体：标题使用书法风格字体，正文使用清晰易读的黑体
+- 图片风格：高质量美食摄影，搭配传统中国元素装饰
 
-1. **Title Slide**
-   - Eye-catching Hulatang image with logo
-   - Tagline: "A Thousand-Year Tradition in Every Bowl"
+## 重点内容
 
-2. **Introduction to Hulatang**
-   - Brief history and origin (Henan province)
-   - Cultural significance in Chinese cuisine
+### 1. 封面页（1页）
+- 醒目的"胡辣汤"标题
+- 品牌logo和slogan
+- 精美的胡辣汤成品图片
 
-3. **The Perfect Bowl**
-   - Visual showcase of authentic Hulatang
-   - Key characteristics (aroma, appearance, texture)
+### 2. 品牌介绍（2-3页）
+- 胡辣汤的历史渊源和文化背景
+- 品牌故事和创立理念
+- 品牌定位和核心价值观
 
-4. **Core Ingredients**
-   - Traditional ingredients breakdown
-   - Quality sourcing and authenticity
+### 3. 产品展示（4-5页）
+- 胡辣汤的主要食材介绍
+- 制作工艺和独特配方
+- 营养价值和健康功效
+- 不同口味和产品系列
 
-5. **Preparation Process**
-   - Step-by-step visual guide
-   - Traditional cooking techniques
+### 4. 市场优势（2-3页）
+- 与竞品的差异化优势
+- 目标消费群体分析
+- 市场表现和用户反馈
 
-6. **Regional Variations**
-   - Different styles across China
-   - Unique local adaptations
+### 5. 发展规划（2页）
+- 品牌发展愿景
+- 未来产品线规划
+- 市场拓展策略
 
-7. **Nutritional Benefits**
-   - Health advantages of key ingredients
-   - Balanced meal presentation
+### 6. 结尾页（1页）
+- 联系方式
+- 品牌口号
+- 感谢语
 
-8. **Target Audience**
-   - Primary demographics
-   - Market segments and opportunities
+## 特殊要求
 
-9. **Brand Positioning**
-   - Unique selling propositions
-   - Competitive advantages
+### 技术要求
+- PPT格式：兼容Microsoft PowerPoint 2016及以上版本
+- 分辨率：16:9宽屏比例
+- 文件大小：控制在50MB以内
 
-10. **Business Opportunities**
-    - Market potential
-    - Expansion strategies
+### 内容要求
+- 所有文字内容需要中英文对照
+- 图片需要获得使用授权或使用原创图片
+- 数据和统计信息需要标注来源
 
-11. **Success Stories**
-    - Testimonials from chefs/customers
-    - Case studies of successful Hulatang businesses
+### 交互要求
+- 适当的动画效果，不过度使用
+- 页面切换流畅自然
+- 重要信息需要突出显示
 
-12. **Call to Action**
-    - Contact information
-    - Next steps for partnership/investment
+### 品牌一致性
+- 严格按照品牌VI规范执行
+- 保持与品牌其他宣传材料的风格统一
+- 体现传统与现代的融合
 
-## Style Requirements
+## 时间要求
+- 初稿完成时间：待定
+- 修改完善时间：待定
+- 最终交付时间：待定
 
-### Visual Design
-- **Color Palette**: Warm tones (deep reds, rich browns, golden yellows) with contrasting clean whites
-- **Typography**: Modern sans-serif for readability, with occasional Chinese calligraphy elements
-- **Imagery**: High-resolution, professional food photography
-- **Layout**: Clean, spacious design with consistent grid system
-
-### Design Elements
-- Traditional Chinese patterns as subtle background elements
-- Modern infographics for data presentation
-- Consistent iconography throughout
-- Professional transitions and animations (subtle, not distracting)
-
-## Content Requirements
-
-### Language
-- Primary: English
-- Secondary: Chinese (for authenticity and cultural context)
-- All Chinese text must include pinyin and English translation
-
-### Tone
-- Passionate and authentic
-- Professional yet approachable
-- Culturally respectful and accurate
-
-## Special Requirements
-
-### Technical Specifications
-- 16:9 aspect ratio for modern displays
-- Mobile-friendly version considerations
-- Print-ready handout version
-- Speaker notes included
-
-### Interactive Elements
-- Embedded video of preparation process (if possible)
-- QR codes linking to additional resources
-- Social media integration elements
-
-### Deliverables
-- PowerPoint source file
-- PDF version for distribution
-- Template for future presentations
-- Image asset library
-
-## Timeline
-- First draft: 7 business days
-- Review and revisions: 3 business days
-- Final delivery: 2 business days after revisions
-
-## Budget Considerations
-- Professional food photography budget allocation
-- Potential translation services
-- Stock imagery resources if needed
-
-## Success Metrics
-- Audience engagement during presentation
-- Follow-up inquiries generated
-- Conversion rate for intended call-to-action
-
-## Project Status
-- Requirements: ✅ Complete
-- Design Analysis: ✅ Complete
-- Client Approval: ✅ Approved
-- Ready for Production: ✅ Yes
+## 联系信息
+- 需方联系人：待定
+- 联系方式：待定
+- 反馈邮箱：待定

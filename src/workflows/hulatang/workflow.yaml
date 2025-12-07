@@ -104,48 +104,28 @@ states:
       - to: "supplier_discuss"
         condition: "NOT approve_design"
 
-# 状态4：乙方制作HTML PPT（核心修改）
+  # 状态4：乙方制作HTML PPT
   - name: "supplier_create"
     agent: "supplier"
     prompt: |
       【system prompt】：{{COLLABORATION_GUIDE}}
       【role】：你是乙方（开发者）。
-      【任务目标】：制作HTML PPT并创建交付物。
-      【instruction】：
-       之前的对话：{{last_agent_content}}。经过讨论，方案已确认。
-       
-       请现在立即编写并输出 `collab/index.html` 文件的完整内容。
-       - 使用 Reveal.js 或简单的 HTML/CSS/JS 实现 PPT 翻页效果。
-       - 内容必须基于之前确认的需求文档。
-       - 必须输出完整的文件内容，不要使用占位符。
-       
-       输出格式示例：
-       collab/index.html
-       ```html
-       <!DOCTYPE html>
-       ...
-       ```
-
+      【任务目标】：制作HTML PPT并汇报状态。
+      之前的对话：{{last_agent_content}}。
+      方案已确认。
       【decisions字段说明】：
       {
         "decisions": {
-          "html_created": true,    // [必填] boolean
-                                   // true: 我已经输出了 collab/index.html 的完整代码。
-                                   // false: 还没有输出代码。
-          "ppt_complete": true,    // [必填] boolean
-                                   // true: PPT 的所有功能和内容已开发完成。
-                                   // false: 还在开发中。
-          "quality_score": 8       // [可选] number (1-10)
-                                   // 自评代码质量分数。
+          "html_created": true,
+          "ppt_complete": true
         }
       }
 
     transitions:
       - to: "client_review"
         condition: "html_created AND ppt_complete"
-      - to: "supplier_create"  # 如果未完成，继续制作
+      - to: "supplier_create"
         condition: "NOT (html_created AND ppt_complete)"
-
 
   # 状态5：甲方评审
   - name: "client_review"

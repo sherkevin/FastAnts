@@ -53,43 +53,35 @@ class AgentService:
         agent_type: str = "coder"
     ) -> Any:
         """
-        获取或创建 Agent 实例（核心 Keep-Alive 逻辑）
-
-        Args:
-            agent_name: Agent名称
-            root_path: Agent工作目录
-            workspace_info: 工作区信息
-            workflow_name: 工作流名称（可选，用于区分不同工作流的同名Agent）
-            agent_type: Agent类型，可选值: "coder", "architect", "ask"，默认"coder"
-
-        Returns:
-            Agent实例
+        获取或创建 Agent 实例
         """
         cache_key = self._generate_cache_key(agent_name, workspace_info, workflow_name)
 
-        # 1. 检查缓存中是否已有该 Agent
         if cache_key in self._active_agents:
             logger.debug(f"♻️  Reusing cached agent: {cache_key}")
             return self._active_agents[cache_key]
 
-        # 2. 如果没有，则创建新实例
         logger.debug(f"🆕 Creating new agent instance: {cache_key} (type: {agent_type})")
 
         self._prepare_directories(root_path, workspace_info.collab_dir)
-        fnames_list = self._gather_files(root_path, workspace_info.collab_dir)
+        
+        # 动态扫描需要关注的文件（Diff模式非常依赖这个上下文）
+        fnames_list = self._gather_files(root_path, workspace_info.collab_dir, workflow_name)
         
         self._ensure_git_initialized(root_path, agent_name)
 
         # 3. 创建Agent实例
-        # 不再切换CWD，而是依赖AiderAgentFactory正确处理路径
         agent = self._agent_factory.create_coder(
             root_path=root_path,
             fnames=fnames_list,
             agent_name=agent_name,
-            type=agent_type
+            type=agent_type,
+            edit_format="diff",  # ✅ 按照您的要求，强制使用 diff 模式
+            # 增加一些 Aider 参数以优化 Diff 表现
+            auto_commits=True,   # 允许自动提交，这对 Diff 模式的回滚机制很重要
+            dirty_commits=True,
         )
 
-        # 4. 存入缓存
         self._active_agents[cache_key] = agent
         return agent
 
@@ -107,42 +99,86 @@ class AgentService:
         if not any(collab_dir.iterdir()):
             (collab_dir / ".keep").touch(exist_ok=True)
 
-    def _gather_files(self, agent_root: Path, collab_dir: Path) -> List[str]:
+   # 修改 _gather_files 方法签名，增加 workflow_name
+    def _gather_files(self, agent_root: Path, collab_dir: Path, workflow_name: str = None) -> List[str]:
         """
         收集Agent需要感知的文件列表
-        包括agent_root下的文件和collab_dir下的文件（通过软链路径）
+        1. agent_root下的文件
+        2. collab_dir下的现有文件
+        3. workflow.yaml 中提到的预期文件（动态白名单）
         """
-        # 关键修复：不要将 agent_root 本身加入文件列表，这会让 Aider 认为根目录是可编辑的
-        # 也不要将 agent_root/collab 目录本身加入，只加入具体文件
-        fnames_list = []
+        fnames_set = set() # 使用集合去重
 
-        # 1. 收集agent_root下的文件（排除collab，避免重复或死循环）
-        # 注意：rglob("*") 会递归遍历所有子目录，包括软链指向的目录（如果 follow_symlinks=True，默认是 False 但行为取决于 OS）
-        # 我们显式排除路径中包含 "collab" 的文件，防止重复添加
+        # 1. 收集agent_root下的文件（排除collab，避免重复）
         for path in agent_root.rglob("*"):
             if path.is_file():
                 try:
                     rel = path.relative_to(agent_root)
                     if "collab" in rel.parts:
                         continue
-                    fnames_list.append(str(path))
+                    fnames_set.add(str(path))
                 except ValueError:
                     continue
 
-        # 2. 收集collab下的文件，但转换为通过软链访问的路径
-        # 这里的 collab_dir 是真实的物理路径
+        # 2. 收集collab下的现有文件（通过软链路径）
         for path in collab_dir.rglob("*"):
             if path.is_file():
                 try:
                     relative_path = path.relative_to(collab_dir)
-                    
                     symlink_path = agent_root / "collab" / relative_path
-                    fnames_list.append(str(symlink_path))
+                    fnames_set.add(str(symlink_path))
                 except ValueError:
                     continue
         
-        return fnames_list
+        # 3. 🆕 动态扫描 workflow.yaml 中的潜在文件
+        if workflow_name:
+            potential_files = self._scan_workflow_for_files(workflow_name)
+            for relative_path in potential_files:
+                # relative_path 类似于 "collab/index.html"
+                # 我们需要将其转换为 agent 视角的绝对路径
+                # 注意：workflow 中提到的 usually 是 "collab/xxx"，而 agent_root 下也有 "collab" 目录
+                
+                # 处理路径拼接: agent_root / "collab/index.html"
+                full_path = agent_root / relative_path
+                
+                # 即使文件不存在，也加入列表，这样 Aider 就知道它可以创建这个文件
+                fnames_set.add(str(full_path))
+                
+                # 顺便确保父目录存在，避免 Aider 写入时报错
+                if not full_path.parent.exists():
+                    full_path.parent.mkdir(parents=True, exist_ok=True)
 
+        return list(fnames_set)
+    def _scan_workflow_for_files(self, workflow_name: str) -> List[str]:
+        """
+        解析 workflow.yaml，提取所有提到的 collab 文件路径
+        """
+        try:
+            # 假设 workflow.yaml 位于 src/workflows/{workflow_name}/workflow.yaml
+            # 根据实际项目结构调整路径查找逻辑
+            project_root = Path(__file__).parent.parent.parent
+            yaml_path = project_root / "src" / "workflows" / workflow_name / "workflow.yaml"
+            
+            if not yaml_path.exists():
+                logger.warning(f"⚠️ Workflow YAML not found at {yaml_path}, skipping file scan.")
+                return []
+
+            content = yaml_path.read_text(encoding="utf-8")
+            
+            # 使用正则匹配所有 "collab/xxx.ext" 格式的路径
+            # 匹配规则：collab/ 后面跟字母数字、下划线、横杠、点、斜杠
+            pattern = r"collab/[\w\-\./]+\.[a-zA-Z0-9]+"
+            matches = re.findall(pattern, content)
+            
+            unique_files = list(set(matches))
+            if unique_files:
+                logger.info(f"🔍 Auto-discovered files from YAML: {unique_files}")
+            return unique_files
+            
+        except Exception as e:
+            logger.warning(f"⚠️ Failed to scan workflow YAML for files: {e}")
+            return []
+        
     def _ensure_git_initialized(self, root_path: Path, agent_name: str) -> None:
         """确保Git仓库已初始化并配置"""
         if not (root_path / ".git").exists():

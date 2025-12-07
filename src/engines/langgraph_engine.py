@@ -141,19 +141,42 @@ class LangGraphEngine:
         
         agent = self.agent_service.get_agent_for_workflow(agent_name, context)
         
-        # 3. 执行Agent
+        # 3. 执行Agent (Aider 原生 run)
         self.logger.info(f"🤖 Executing {agent_name} in state '{state_name}'")
+        
+        # Aider 的 run 方法内部已经包含了 "生成 -> 应用 -> 报错 -> 重试" 的原生循环
         response = agent.run(prompt)
         
-        # 4. 解析响应
-        parsed_response = self._parse_agent_response(response, agent_name, state_name)
+        # 4. 解析 JSON
+        parsed_response = {"content": response, "decisions": {}}
+        try:
+            parsed = self._parse_agent_response(response, agent_name, state_name)
+            if parsed:
+                parsed_response.update(parsed)
+        except Exception:
+            pass
+
+        # 5. ✅ 通用事实核查 (Generic Fact Check)
+        # 只要 Agent 的 aider_edited_files 集合不为空，说明它真的干活了（修改了磁盘上的文件）
+        has_edited_files = False
+        if hasattr(agent, "aider_edited_files") and agent.aider_edited_files:
+            has_edited_files = True
+            self.logger.info(f"✅ Verified edits on files: {agent.aider_edited_files}")
+
+        # 兜底逻辑：如果解析不到 JSON，但检测到文件修改，我们可以尝试给一个默认成功的信号
+        # 或者仅仅是打印日志，把判断权留给具体的决策字段
+        # (这里为了通用性，我们不强行修改具体的 key，除非 workflow 约定了通用 key)
+        if has_edited_files and not parsed_response["decisions"]:
+            self.logger.warning("⚠️ Files edited but no JSON decisions found. Agent might have forgotten to report status.")
+            # 可选：如果您的 workflow 设计中所有 completion key 都叫 'task_complete'，可以在这里兜底
+            # parsed_response["decisions"]["task_complete"] = True
         
-        # 5. 更新状态
+        # 5.1 更新状态中的决策和最后执行的Agent信息
+        state["decisions"] = parsed_response.get("decisions", {})
         state["last_agent"] = agent_name
         state["last_content"] = parsed_response.get("content", response)
-        state["decisions"] = parsed_response.get("decisions", {})
         
-        # 5.1 更新总交互次数（系统内部）
+        # 5.2 更新总交互次数（系统内部）
         state["total_turns"] = state.get("total_turns", 0) + 1
         
         # 6. 记录执行历史
